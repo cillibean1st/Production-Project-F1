@@ -493,7 +493,7 @@ else:
             # Draw underlying gray layout skeleton line
             ax_live.plot(x_coords, y_coords, color='#2c303d', linewidth=4, alpha=0.8, zorder=1)
             ax_live.scatter(x_coords[0], y_coords[0], color='#00FF00', s=100, marker='^', zorder=2)
-
+            # push
             # live grid list
             active_grid = [
                 'VER', 'HAD', 'HAM', 'LEC', 'NOR', 'PIA', 'RUS', 'ANT',
