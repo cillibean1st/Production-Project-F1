@@ -1,0 +1,4 @@
+matplotlib
+sklearn-pandas
+streamlit
+fastf1

@@ -477,107 +477,113 @@ else:
 
     elif z == "map":
         zoom_btn("Track Map Monitor & Telemetry Simulator", "map")
-        st.markdown(f"### Spatial GPS Track Simulation & Performance Analysis: {sel_track}")
-        st.caption(f"Synthesizing historical telemetry map arrays using Session Reference ID: `{openf1_session_key}`")
+        tab_telemetry, tab_real = st.tabs(["Telemetry Map", "Real time Driver map"])
+        with tab_telemetry:
+            st.markdown(f"### Spatial GPS Track Simulation & Performance Analysis: {sel_track}")
+            st.caption(f"Synthesizing historical telemetry map arrays using Session Reference ID: `{openf1_session_key}`")
 
-        with st.spinner("Downloading high-frequency relative position telemetry files from OpenF1 arrays..."):
-            map_data = fetch_openf1_spatial_map(sel_drv_code, openf1_session_key)
+            with st.spinner("Downloading high-frequency relative position telemetry files from OpenF1 arrays..."):
+                map_data = fetch_openf1_spatial_map(sel_drv_code, openf1_session_key)
 
-        if map_data and len(map_data["x"]) > 0:
-            x_coords = map_data["x"]
-            y_coords = map_data["y"]
-            speeds = map_data["speed"]
+            if map_data and len(map_data["x"]) > 0:
+                x_coords = map_data["x"]
+                y_coords = map_data["y"]
+                speeds = map_data["speed"]
 
-            # Form dual-axis plotting canvas
-            fig_split, (ax_map, ax_trace) = plt.subplots(1, 2, figsize=(16, 6.5),
-                                                         gridspec_kw={'width_ratios': [1.2, 1]})
-            fig_split.patch.set_facecolor('#0e1117')
+                # Form dual-axis plotting canvas
+                fig_split, (ax_map, ax_trace) = plt.subplots(1, 2, figsize=(16, 6.5),
+                                                             gridspec_kw={'width_ratios': [1.2, 1]})
+                fig_split.patch.set_facecolor('#0e1117')
 
-            # SUBPLOT A: GEOGRAPHIC CIRCUIT LAYOUT TRACK
-            ax_map.set_facecolor('#0e1117')
-            ax_map.plot(x_coords, y_coords, color='white', alpha=0.15, linewidth=2, zorder=1)
-            sc = ax_map.scatter(x_coords, y_coords, c=speeds, cmap='plasma', s=6, zorder=2)
-            ax_map.scatter(x_coords[0], y_coords[0], color='#00FF00', s=150, marker='^', label='Start / Finish Line',
-                           zorder=3)
+                # SUBPLOT A: GEOGRAPHIC CIRCUIT LAYOUT TRACK
+                ax_map.set_facecolor('#0e1117')
+                ax_map.plot(x_coords, y_coords, color='white', alpha=0.15, linewidth=2, zorder=1)
+                sc = ax_map.scatter(x_coords, y_coords, c=speeds, cmap='plasma', s=6, zorder=2)
+                ax_map.scatter(x_coords[0], y_coords[0], color='#00FF00', s=150, marker='^', label='Start / Finish Line',
+                               zorder=3)
 
-            # Fixing the track shape distortions
-            ax_map.set_aspect('equal')
-            ax_map.axis('off')
+                # Fixing the track shape distortions
+                ax_map.set_aspect('equal')
+                ax_map.axis('off')
 
-            # Enforce tight cropping padding to remove blank void margins around the true geometry outline
-            ax_map.set_xlim(min(x_coords) - 150, max(x_coords) + 150)
-            ax_map.set_ylim(min(y_coords) - 150, max(y_coords) + 150)
+                # Enforce tight cropping padding to remove blank void margins around the true geometry outline
+                ax_map.set_xlim(min(x_coords) - 150, max(x_coords) + 150)
+                ax_map.set_ylim(min(y_coords) - 150, max(y_coords) + 150)
 
-            ax_map.set_title("True Circuit Shape Matrix", color='white', fontsize=12, pad=10)
-            ax_map.legend(facecolor='#1a1a1a', labelcolor='white', loc='upper right', fontsize=9)
+                ax_map.set_title("True Circuit Shape Matrix", color='white', fontsize=12, pad=10)
+                ax_map.legend(facecolor='#1a1a1a', labelcolor='white', loc='upper right', fontsize=9)
 
-            cbar = fig_split.colorbar(sc, ax=ax_map, orientation='horizontal', pad=0.05, shrink=0.8)
-            cbar.set_label('Velocity scale mapping (km/h)', color='white', fontsize=9)
-            cbar.ax.tick_params(labelsize=8, colors='white')
+                cbar = fig_split.colorbar(sc, ax=ax_map, orientation='horizontal', pad=0.05, shrink=0.8)
+                cbar.set_label('Velocity scale mapping (km/h)', color='white', fontsize=9)
+                cbar.ax.tick_params(labelsize=8, colors='white')
 
-            # SUBPLOT B: LINEAR TIMELINE PROFILE
-            ax_trace.set_facecolor('#14171f')
-            distance_axis = np.arange(len(speeds))
-            ax_trace.plot(distance_axis, speeds, color='#00FFE0', linewidth=2, label=f"{sel_drv_code} Live Loop")
+                # SUBPLOT B: LINEAR TIMELINE PROFILE
+                ax_trace.set_facecolor('#14171f')
+                distance_axis = np.arange(len(speeds))
+                ax_trace.plot(distance_axis, speeds, color='#00FFE0', linewidth=2, label=f"{sel_drv_code} Live Loop")
 
-            ax_trace.set_title("Linear Velocity Profile (Braking vs. Throttle)", color='white', fontsize=12, pad=10)
-            ax_trace.set_xlabel("Track Data Samples (Timeline)", color='#aaaaaa', fontsize=9)
-            ax_trace.set_ylabel("Telemetry Speed (km/h)", color='#aaaaaa', fontsize=9)
-            ax_trace.tick_params(colors='white', labelsize=8)
-            ax_trace.grid(color='#2c303d', linestyle=':', alpha=0.6)
-            ax_trace.legend(facecolor='#1a1a1a', labelcolor='white', fontsize=9)
-            ax_trace.set_ylim(min(speeds) - 20, max(speeds) + 20)
+                ax_trace.set_title("Linear Velocity Profile (Braking vs. Throttle)", color='white', fontsize=12, pad=10)
+                ax_trace.set_xlabel("Track Data Samples (Timeline)", color='#aaaaaa', fontsize=9)
+                ax_trace.set_ylabel("Telemetry Speed (km/h)", color='#aaaaaa', fontsize=9)
+                ax_trace.tick_params(colors='white', labelsize=8)
+                ax_trace.grid(color='#2c303d', linestyle=':', alpha=0.6)
+                ax_trace.legend(facecolor='#1a1a1a', labelcolor='white', fontsize=9)
+                ax_trace.set_ylim(min(speeds) - 20, max(speeds) + 20)
 
-            st.pyplot(fig_split)
-            st.success("Successfully processed historical trace maps with aspect adjustments.")
+                st.pyplot(fig_split)
+                st.success("Successfully processed historical trace maps with aspect adjustments.")
 
-            # --- NEW ADDITION: LIVE DRIVER POSITION INTERVAL TRACKER GRID ---
-            st.divider()
-            st.subheader("Live Driver Interval Positioning Stand")
-            st.caption("Tracking physical localization steps across the circuit loop.")
+            else:
+                st.warning("Telemetry file load execution drop.")
+        with tab_real:
+            if map_data and len(map_data["x"]) > 0:
+                # --- NEW ADDITION: LIVE DRIVER POSITION INTERVAL TRACKER GRID ---
+                st.divider()
+                st.subheader("Live Driver Interval Positioning Stand")
+                st.caption("Tracking physical localization steps across the circuit loop.")
 
-            # Pull positioning states across the benchmark track loop array length
-            time_slider_step = st.slider("Timeline Tracking Matrix Frame Index", 0, len(speeds) - 1, len(speeds) // 2)
+                # Pull positioning states across the benchmark track loop array length
+                time_slider_step = st.slider("Timeline Tracking Matrix Frame Index", 0, len(speeds) - 1, len(speeds) // 2)
 
-            fig_live_track, ax_live = plt.subplots(figsize=(15, 6))
-            fig_live_track.patch.set_facecolor('#0e1117')
-            ax_live.set_facecolor('#0e1117')
+                fig_live_track, ax_live = plt.subplots(figsize=(15, 6))
+                fig_live_track.patch.set_facecolor('#0e1117')
+                ax_live.set_facecolor('#0e1117')
 
-            # Draw underlying gray layout skeleton line
-            ax_live.plot(x_coords, y_coords, color='#2c303d', linewidth=4, alpha=0.8, zorder=1)
-            ax_live.scatter(x_coords[0], y_coords[0], color='#00FF00', s=100, marker='^', zorder=2)
-            # push
-            # live grid list
-            active_grid = [
-                'VER', 'HAD', 'HAM', 'LEC', 'NOR', 'PIA', 'RUS', 'ANT',
-                'ALO', 'STR', 'SAI', 'ALB', 'GAS', 'COL', 'OCO', 'BEA',
-                'HUL', 'BOR', 'LAW', 'LIN', 'PER', 'BOT'
-            ]
-            # Map tracking intervals sequentially for every driver in our list
-            for idx, d_code in enumerate(active_grid):
-                d_team = teams.get(d_code, 'Mercedes')
-                d_color = TEAM_COLORS.get(d_team, '#fffff')
+                # Draw underlying gray layout skeleton line
+                ax_live.plot(x_coords, y_coords, color='#2c303d', linewidth=1, alpha=0.8, zorder=1)
+                ax_live.scatter(x_coords[0], y_coords[0], color='#00FF00', s=100, marker='^', zorder=2)
+                # push
+                # live grid list
+                active_grid = [
+                    'VER', 'HAD', 'HAM', 'LEC', 'NOR', 'PIA', 'RUS', 'ANT',
+                    'ALO', 'STR', 'SAI', 'ALB', 'GAS', 'COL', 'OCO', 'BEA',
+                    'HUL', 'BOR', 'LAW', 'LIN', 'PER', 'BOT'
+                ]
+                # Map tracking intervals sequentially for every driver in our list
+                for idx, d_code in enumerate(active_grid):
+                    d_team = teams.get(d_code, 'Mercedes')
+                    d_color = TEAM_COLORS.get(d_team, '#fffff')
 
-                # Disperse drivers across realistic interval delta steps on the circuit path
-                offset_idx = (time_slider_step - (idx * 22)) % len(speeds)
-                p_x = x_coords[offset_idx]
-                p_y = y_coords[offset_idx]
+                    # Disperse drivers across realistic interval delta steps on the circuit path
+                    offset_idx = (time_slider_step - (idx * 22)) % len(speeds)
+                    p_x = x_coords[offset_idx]
+                    p_y = y_coords[offset_idx]
 
-                # Plot position dot
-                ax_live.scatter(p_x, p_y, color=d_color, s=120, edgecolors='white', linewidth=1.5, zorder=4)
-                # Attach timing badge text labels next to each marker
-                ax_live.text(p_x + 35, p_y + 35, d_code, color='white', fontsize=9, fontweight='bold',
-                             bbox=dict(facecolor='#1a1a1a', alpha=0.7, boxstyle='round,pad=0.2', edgecolor='none'),
-                             zorder=5)
+                    # Plot position dot
+                    ax_live.scatter(p_x, p_y, color=d_color, s=120, edgecolors='white', linewidth=1, zorder=4)
+                    # Attach timing badge text labels next to each marker
+                    ax_live.text(p_x + 35, p_y + 35, d_code, color='white', fontsize=9, fontweight='bold',
+                                 bbox=dict(facecolor='#1a1a1a', alpha=0.7, boxstyle='round,pad=0.2', edgecolor='none'),
+                                 zorder=5)
 
-            ax_live.set_aspect('equal')
-            ax_live.axis('off')
-            ax_live.set_xlim(min(x_coords) - 150, max(x_coords) + 150)
-            ax_live.set_ylim(min(y_coords) - 150, max(y_coords) + 150)
+                ax_live.set_aspect('equal')
+                ax_live.axis('off')
+                ax_live.set_xlim(min(x_coords) - 150, max(x_coords) + 150)
+                ax_live.set_ylim(min(y_coords) - 150, max(y_coords) + 150)
 
-            st.pyplot(fig_live_track)
-        else:
-            st.warning("Telemetry file load execution drop.")
+                st.pyplot(fig_live_track)
+            else:
+                st.warning("Telemetry file load execution drop.")
 
     elif z == "live":
         zoom_btn("Live Mission Control Panel", "live")
