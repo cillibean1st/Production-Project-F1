@@ -476,6 +476,7 @@ else:
                 st.pyplot(fig)
 
     elif z == "map":
+        # map tabs
         zoom_btn("Track Map Monitor & Telemetry Simulator", "map")
         tab_telemetry, tab_real = st.tabs(["Telemetry Map", "Real time Driver map"])
         with tab_telemetry:
