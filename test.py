@@ -269,6 +269,40 @@ def get_all_strategies(base_life, track, driver, team, total_laps, start_tyre, s
         }
 
 
+def calculate_strategy_performance(strat_data, tr_id, dr_id, tm_id, model_time, mappings, tot_laps):
+    """Calculates Total Race Time and Avg Lap Time for a given strategy."""
+    total_race_s = 0
+    all_times = []
+
+    # Calculate stints
+    # Handling the strategy structure:
+    # Example: laps=[15, 30], tyres=['MEDIUM', 'SOFT']
+    current_lap = 0
+    num_stops = len(strat_data['laps']) - 1  # Assuming laps provided defines stop points
+
+    # Logic to interpret the strategy segments
+    # Assuming standard implementation based on your existing logic
+    # We iterate through the predicted stints
+    for i, tyre in enumerate(strat_data['tyres']):
+        cid = mappings['Compound'].transform([tyre])[0]
+
+        # Calculate length of this stint
+        if i < len(strat_data['laps']):
+            stint_len = strat_data['laps'][i] - (strat_data['laps'][i - 1] if i > 0 else 0)
+        else:
+            stint_len = tot_laps - current_lap
+
+        # Prediction Loop
+        for age in range(1, int(stint_len) + 1):
+            pred = model_time.predict([[tr_id, dr_id, tm_id, cid, age, i + 1]])[0]
+            all_times.append(pred)
+            total_race_s += pred
+
+    # Add pit stop penalty (approx 22s per stop)
+    total_race_s += num_stops * 22.0
+
+    return total_race_s, np.mean(all_times) if all_times else 0
+
 def zoom_btn(label, key):
     c = st.columns([0.8, 0.2])
     c[0].subheader(label)
@@ -283,7 +317,7 @@ def zoom_btn(label, key):
 
 
 # --- 6. SIDEBAR & GLOBAL CONTROLS ---
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg", width=100)
+st.sidebar.image("F1-logo.png", width=100)
 st.sidebar.header("Race Control")
 
 app_mode = st.sidebar.selectbox("Dashboard Mode", ["Editing Mode", "Live Mode"])
@@ -319,17 +353,36 @@ all_strats = get_all_strategies(pred_life, tr_id, dr_id, tm_id, tot_laps, start_
 
 # --- 7. MAIN DASHBOARD ---
 st.title(f"PIT WALL: {sel_track} 2026")
-st.caption(f"Pipeline Mode: **{app_mode}** | Target Session Instance Token Key: `{openf1_session_key}`")
+
+# 1. Define Selected Strategy
+if 'last_selected_strat' not in st.session_state:
+    st.session_state.last_selected_strat = list(all_strats.keys())[0]
 
 sel_strat_key = st.selectbox("Active Strategy Selection", list(all_strats.keys()))
 active_strat = all_strats[sel_strat_key]
 
-m_top1, m_top2, m_top3 = st.columns(3)
-with m_top1: st.metric("Driver", f"{sel_drv_code}", teams[sel_drv_code])
-with m_top2: st.metric("Predicted Tyre Life", f"{pred_life} Laps")
-with m_top3: st.metric("Total Stops", f"{len(active_strat['laps'])}")
+# 2. Calculate baseline for comparison
+baseline_time, _ = calculate_strategy_performance(active_strat, tr_id, dr_id, tm_id, model_time, mappings, tot_laps)
+
+# 3. Display Strategy Comparison Matrix
+st.subheader("Strategy Comparison Matrix")
+strat_cols = st.columns(3)
+
+for idx, (name, strat_data) in enumerate(all_strats.items()):
+    total_s, avg_s = calculate_strategy_performance(strat_data, tr_id, dr_id, tm_id, model_time, mappings, tot_laps)
+
+    # Calculate delta in seconds
+    delta_s = total_s - baseline_time
+    delta_str = f"{'+' if delta_s > 0 else ''}{delta_s:.1f}s"
+
+    with strat_cols[idx]:
+        st.markdown(f"**{name}**")
+        # delta_color="off" prevents Streamlit from applying red/green colors
+        st.metric("Total Time", format_f1_time(total_s), delta=delta_str, delta_color="off")
+        st.metric("Avg Lap", format_f1_time(avg_s, is_lap_time=True), delta_color="off")
 
 st.divider()
+
 
 if st.session_state.zoomed_view is None:
     r1c1, r1c2 = st.columns(2);
@@ -741,4 +794,4 @@ else:
                 st.warning("Trend data is currently unavailable.")
 
 st.sidebar.write("---")
-st.sidebar.write("by andrew pepper")
+st.sidebar.image("AndrewPepper.jpg", width=300)
